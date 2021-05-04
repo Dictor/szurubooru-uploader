@@ -35,17 +35,27 @@ func main() {
 	flag.StringVar(&directory, "dir", "", "directory to upload")
 	flag.StringVar(&safety, "safety", "unsafe", "safety of images in directory")
 	flag.StringVar(&tag, "tag", "", "tag which will be assigned to images")
+	flag.StringVar(&userId, "uid", "", "user's login id")
+	flag.StringVar(&userPass, "upw", "", "user's login password")
 	flag.BoolVar(&isDebug, "debug", false, "print debug log")
 	flag.Parse()
 
 	if isDebug {
 		Logger.SetLevel(logrus.DebugLevel)
 	}
-
-	fmt.Print("enter user id : ")
-	fmt.Scanln(&userId)
-	fmt.Print("enter user password : ")
-	fmt.Scanln(&userPass)
+	Logger.SetFormatter(&logrus.TextFormatter{
+		ForceColors:   true,
+		DisableColors: false,
+		ForceQuote:    false,
+	})
+	if len(userId) < 1 {
+		fmt.Print("enter user id : ")
+		fmt.Scanln(&userId)
+	}
+	if len(userPass) < 1 {
+		fmt.Print("enter user password : ")
+		fmt.Scanln(&userPass)
+	}
 
 	if userToken, err = login(host, userId, userId); err != nil {
 		Logger.WithError(err).Fatalln("fail to log in")
@@ -71,18 +81,27 @@ func main() {
 	for _, path := range filePaths {
 		ftok, err := uploadFile(host, userToken, path)
 		if err != nil {
-			Logger.WithError(err).Errorln("error caused during upload file")
+			Logger.WithFields(logrus.Fields{
+				"error": err,
+				"path":  path,
+			}).Errorln("error caused during upload file")
 			continue
 		}
 
 		rev, err := reverseSearch(host, userToken, ftok)
 		if err != nil {
-			Logger.WithError(err).Errorln("error caused during reverse search")
+			Logger.WithFields(logrus.Fields{
+				"error": err,
+				"path":  path,
+			}).Errorln("error caused during reverse search")
 			continue
 		}
 
 		if err := createPost(host, userToken, ftok, tag, safety, rev); err != nil {
-			Logger.WithError(err).Errorln("error caused during create post")
+			Logger.WithFields(logrus.Fields{
+				"error": err,
+				"path":  path,
+			}).Errorln("error caused during create post")
 			continue
 		}
 		Logger.Infof("uploaded : %s", path)
