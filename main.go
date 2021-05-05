@@ -57,7 +57,7 @@ func main() {
 		fmt.Scanln(&userPass)
 	}
 
-	if userToken, err = login(host, userId, userId); err != nil {
+	if userToken, err = login(host, userId, userPass); err != nil {
 		Logger.WithError(err).Fatalln("fail to log in")
 	}
 
@@ -78,34 +78,62 @@ func main() {
 	}
 	Logger.Infof("%d images will be uploaded", len(filePaths))
 
-	for _, path := range filePaths {
+	logError := func(cur, total int, err error, path, action string) {
+		Logger.WithFields(logrus.Fields{
+			"error": err,
+			"path":  path,
+		}).Errorf("(%d/%d) error : %s\n", cur+1, total, action)
+	}
+
+	for i, path := range filePaths {
+		// upload temporary image file
 		ftok, err := uploadFile(host, userToken, path)
 		if err != nil {
-			Logger.WithFields(logrus.Fields{
-				"error": err,
-				"path":  path,
-			}).Errorln("error caused during upload file")
+			logError(i, len(filePaths), err, path, "upload file")
 			continue
 		}
-
+		// request reverse search
 		rev, err := reverseSearch(host, userToken, ftok)
 		if err != nil {
-			Logger.WithFields(logrus.Fields{
-				"error": err,
-				"path":  path,
-			}).Errorln("error caused during reverse search")
+			logError(i, len(filePaths), err, path, "search similar post")
 			continue
 		}
-
+		// create post
 		if err := createPost(host, userToken, ftok, tag, safety, rev); err != nil {
-			Logger.WithFields(logrus.Fields{
-				"error": err,
-				"path":  path,
-			}).Errorln("error caused during create post")
+			logError(i, len(filePaths), err, path, "create post")
 			continue
 		}
-		Logger.Infof("uploaded : %s", path)
+		Logger.Infof("(%d/%d) uploaded : %s", i+1, len(filePaths), path)
 	}
+}
+
+func logResponse(resp *resty.Response, action string) {
+	Logger.WithFields(logrus.Fields{
+		"action": action,
+		"code":   resp.StatusCode(),
+	}).Debugf("response: %s\n", string(resp.Body()))
+}
+
+func parseErrorResponse(resp *resty.Response) string {
+	var (
+		name  = "unknown"
+		title = "unknown"
+		desc  = "unknown"
+	)
+	ret := map[string]interface{}{}
+	if err := json.Unmarshal(resp.Body(), &ret); err != nil {
+		return "fail to parse response"
+	}
+	if rawName, ok := ret["name"]; ok {
+		name = rawName.(string)
+	}
+	if rawTitle, ok := ret["title"]; ok {
+		title = rawTitle.(string)
+	}
+	if rawDesc, ok := ret["description"]; ok {
+		desc = rawDesc.(string)
+	}
+	return fmt.Sprintf("<%s> %s : %s", name, title, desc)
 }
 
 func login(host, userId, userPass string) (string, error) {
@@ -114,13 +142,13 @@ func login(host, userId, userPass string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	logResponse(resp, "login")
 	ret := map[string]interface{}{}
 	if err := json.Unmarshal(resp.Body(), &ret); err != nil {
 		return "", err
 	}
 	if _, exist := ret["token"]; !exist {
-		Logger.Debugf("response: %s\n", string(resp.Body()))
-		return "", fmt.Errorf("request error: no token response")
+		return "", fmt.Errorf("request error: no token response (%s)", parseErrorResponse(resp))
 	}
 	return auth, nil
 }
@@ -130,13 +158,13 @@ func uploadFile(host, userToken, filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	logResponse(resp, "uploadFile")
 	ret := map[string]string{}
 	if err := json.Unmarshal(resp.Body(), &ret); err != nil {
 		return "", err
 	}
 	if _, exist := ret["token"]; !exist {
-		Logger.Debugf("response: %s\n", string(resp.Body()))
-		return "", fmt.Errorf("request error: no token response")
+		return "", fmt.Errorf("request error: no token response (%s)", parseErrorResponse(resp))
 	}
 	return ret["token"], nil
 }
@@ -154,13 +182,17 @@ func createPost(host, userToken, fileToken, tag, safety string, reverseSearch *R
 			similarPost = append(similarPost, p.Post.Id)
 		}
 		payload["relations"] = similarPost
+		Logger.WithFields(logrus.Fields{
+			"count": payload["relationCount"],
+			"posts": fmt.Sprint(payload["relations"]),
+		}).Infof("file '%s' has similar posts and will apply relation between those posts.\n", fileToken)
 	}
 	m, _ := json.Marshal(payload)
 	Logger.Debugln(string(m))
 	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).SetBody(payload).Post(host + "/api/posts")
-	Logger.WithField("code", resp.StatusCode()).Debugf("response: %s\n", string(resp.Body()))
+	logResponse(resp, "createPost")
 	if resp.StatusCode() != 200 {
-		return fmt.Errorf("status code is %d", resp.StatusCode())
+		return fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
 	}
 	return err
 }
@@ -170,9 +202,9 @@ func reverseSearch(host, userToken, fileToken string) (*ReverseSearchResponse, e
 	if err != nil {
 		return nil, err
 	}
-	Logger.WithField("code", resp.StatusCode()).Debugf("response: %s\n", string(resp.Body()))
+	logResponse(resp, "createPost")
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("status code is %d", resp.StatusCode())
+		return nil, fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
 	}
 	result := ReverseSearchResponse{}
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
