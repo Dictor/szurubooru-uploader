@@ -3,8 +3,8 @@ forder uploader with tag assigning feature for szurubooru
 
 ## Usage
 - `dir` is necessary option.
-- if didn't give `-uid` or `upw` or both, program ask you interactive
-- currently `tag` option support only on tag. (if you can, please contribute!)
+- if didn't give `uid` or `upw` or both, program ask these interactive
+- currently `tag` option support only one tag. (if you can, please contribute!)
 
 ```
 ./szurubooru-uploader -<option1> "<value>" -<option2> "<value2>"...
