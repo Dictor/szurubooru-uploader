@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ func main() {
 	flag.StringVar(&host, "host", "http://localhost", "address of host")
 	flag.StringVar(&directory, "dir", "", "directory to upload")
 	flag.StringVar(&safety, "safety", "unsafe", "safety of images in directory")
-	flag.StringVar(&tag, "tag", "", "tag which will be assigned to images")
+	flag.StringVar(&tag, "tag", "", "comma seperated tags which will be assigned to images")
 	flag.StringVar(&userId, "uid", "", "user's login id")
 	flag.StringVar(&userPass, "upw", "", "user's login password")
 	flag.BoolVar(&isDebug, "debug", false, "print debug log")
@@ -85,6 +86,7 @@ func main() {
 		}).Errorf("(%d/%d) error : %s\n", cur+1, total, action)
 	}
 
+	tags := strings.Split(tag, ",")
 	for i, path := range filePaths {
 		// upload temporary image file
 		ftok, err := uploadFile(host, userToken, path)
@@ -99,7 +101,7 @@ func main() {
 			continue
 		}
 		// create post
-		if err := createPost(host, userToken, ftok, tag, safety, rev); err != nil {
+		if err := createPost(host, userToken, ftok, tags, safety, rev); err != nil {
 			logError(i, len(filePaths), err, path, "create post")
 			continue
 		}
@@ -169,11 +171,11 @@ func uploadFile(host, userToken, filePath string) (string, error) {
 	return ret["token"], nil
 }
 
-func createPost(host, userToken, fileToken, tag, safety string, reverseSearch *ReverseSearchResponse) error {
+func createPost(host, userToken, fileToken string, tags []string, safety string, reverseSearch *ReverseSearchResponse) error {
 	payload := map[string]interface{}{
 		"contentToken": fileToken,
 		"safety":       safety,
-		"tags":         []string{tag},
+		"tags":         tags,
 	}
 	if reverseSearch != nil && len(reverseSearch.SimilarPosts) > 0 {
 		payload["relationCount"] = len(reverseSearch.SimilarPosts)
