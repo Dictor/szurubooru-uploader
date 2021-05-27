@@ -18,4 +18,10 @@ type (
 		Tags         []interface{} `json:"tags"`
 		ThumbnailUrl string        `json:"thumbnailUrl"`
 	}
+
+	BatchUploadFolder struct {
+		Name   string
+		Number int
+		Path   string
+	}
 )
