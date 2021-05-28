@@ -140,6 +140,10 @@ func execDelete(cmd *cobra.Command, args []string) {
 	fmt.Print("if want to continue, press enter (else, press ctrl + c)")
 	fmt.Scanln()
 	for i, p := range posts {
+		if args[1] == "true" && p.FavoriteCount > 0 {
+			Logger.Infof("(%d/%d) skipped : %d", i+1, len(posts), p.Id)
+			continue
+		}
 		if err := deletePost(host, userToken, p); err != nil {
 			Logger.WithFields(logrus.Fields{
 				"error": err,
