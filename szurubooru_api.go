@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
@@ -117,4 +119,45 @@ func reverseSearch(host, userToken, fileToken string) (*ReverseSearchResponse, e
 		return nil, err
 	}
 	return &result, nil
+}
+
+func queryPost(host, userToken, query string, offset int) (*ListPostResponse, error) {
+	const imagePerRequest = 50
+	buildUrl := func(host, query string, limit, offset int) string {
+		url := []string{
+			host,
+			"/api/posts/?query=",
+			query,
+			"&limit=",
+			strconv.Itoa(imagePerRequest),
+			"&offset=",
+			strconv.Itoa(offset),
+		}
+		return strings.Join(url, "")
+	}
+	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).Get(buildUrl(host, query, imagePerRequest, offset))
+	if err != nil {
+		return nil, err
+	}
+	logResponse(resp, "queryPost")
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
+	}
+	result := ListPostResponse{}
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func deletePost(host, userToken string, post Post) error {
+	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).SetBody(map[string]int{"version": post.Version}).Delete(host + "/api/post/" + strconv.Itoa(post.Id))
+	if err != nil {
+		return err
+	}
+	logResponse(resp, "deletePost")
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
+	}
+	return nil
 }

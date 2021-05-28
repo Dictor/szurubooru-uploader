@@ -11,6 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+/*
+args = [target directory, tags]
+*/
 func execUpload(cmd *cobra.Command, args []string) {
 	var (
 		err error
@@ -62,6 +65,9 @@ func execUpload(cmd *cobra.Command, args []string) {
 	}
 }
 
+/*
+args = [target directory]
+*/
 func execBatchUpload(cmd *cobra.Command, args []string) {
 	var (
 		Folders []BatchUploadFolder = []BatchUploadFolder{}
@@ -94,5 +100,53 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 
 	for _, f := range Folders {
 		execUpload(cmd, []string{f.Path, fmt.Sprintf("%s(%d)", strings.Replace(f.Name, " ", "_", -1), f.Number)})
+	}
+}
+
+/*
+args = [query, except favorite (bool)]
+*/
+func execDelete(cmd *cobra.Command, args []string) {
+	logError := func(err error) {
+		Logger.WithFields(logrus.Fields{
+			"error": err,
+			"query": args[0],
+		}).Errorln("error caused during querying posts")
+	}
+	res, err := queryPost(host, userToken, args[0], 0)
+	if err != nil {
+		logError(err)
+	}
+	Logger.Infof("%d posts are found, start recursive posts retrieving\n", res.Total)
+
+	posts := []Post{}
+	posts = append(posts, res.Results...)
+	currentPosition := len(res.Results)
+	if res.Total > len(res.Results) {
+		for {
+			if currentPosition >= res.Total {
+				break
+			}
+			res, err := queryPost(host, userToken, args[0], currentPosition)
+			if err != nil {
+				logError(err)
+				return
+			}
+			posts = append(posts, res.Results...)
+			currentPosition += len(res.Results)
+		}
+	}
+	Logger.Infof("posts retrieving complete. %d posts are expected, %d posts are retrieved\n", res.Total, len(posts))
+	fmt.Print("if want to continue, press enter (else, press ctrl + c)")
+	fmt.Scanln()
+	for i, p := range posts {
+		if err := deletePost(host, userToken, p); err != nil {
+			Logger.WithFields(logrus.Fields{
+				"error": err,
+				"id":    p.Id,
+			}).Errorf("(%d/%d) error : %d\n", i+1, len(posts), p.Id)
+			continue
+		}
+		Logger.Infof("(%d/%d) deleted : %d", i+1, len(posts), p.Id)
 	}
 }

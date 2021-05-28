@@ -41,6 +41,14 @@ func main() {
 			Run:              execBatchUpload,
 			PersistentPreRun: credentialInput,
 		}
+		cmdDelete = &cobra.Command{
+			Use:              "delete <tag> <except favorite>",
+			Long:             "delete posts which have given tag\n* tag: tag for deleting\n* except favorite: true=delete except favorited post, false = delete all posts",
+			Short:            "delete posts which have given tag",
+			Args:             cobra.ExactArgs(2),
+			Run:              execDelete,
+			PersistentPreRun: credentialInput,
+		}
 	)
 
 	if isDebug {
@@ -54,7 +62,7 @@ func main() {
 
 	var rootCmd = &cobra.Command{Use: "app"}
 
-	rootCmd.AddCommand(cmdUpload, cmdBatchUpload)
+	rootCmd.AddCommand(cmdUpload, cmdBatchUpload, cmdDelete)
 	rootCmd.PersistentFlags().StringVar(&host, "host", "http://localhost", "address of host")
 	rootCmd.PersistentFlags().StringVar(&safety, "safety", "unsafe", "safety of images in directory")
 	rootCmd.PersistentFlags().StringVar(&userId, "uid", "", "user's login id")
