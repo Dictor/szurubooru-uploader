@@ -34,10 +34,10 @@ func main() {
 			PersistentPreRun: credentialInput,
 		}
 		cmdBatchUpload = &cobra.Command{
-			Use:              "bupload <root forder path>",
-			Long:             "batch upload multiple folder to szurubooru host\n* forder path: path to root target directory",
+			Use:              "bupload <root forder path> <handler>",
+			Long:             "batch upload multiple folder to szurubooru host\n* forder path: path to root target directory\n*handler: pixiv=%artist (%user_number), name=%artist",
 			Short:            "batch upload multiple folder to szurubooru host",
-			Args:             cobra.ExactArgs(1),
+			Args:             cobra.ExactArgs(2),
 			Run:              execBatchUpload,
 			PersistentPreRun: credentialInput,
 		}

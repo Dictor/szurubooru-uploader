@@ -73,7 +73,7 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 		Folders []BatchUploadFolder = []BatchUploadFolder{}
 	)
 
-	filepath.WalkDir(args[0], func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(args[0], func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -82,10 +82,22 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 			Number int
 		)
 		if d.IsDir() {
-			n, err := fmt.Sscanf(d.Name(), "%s (%d)", &Name, &Number)
-			if n != 2 || err != nil {
-				fmt.Printf("fail to parse path '%s'\n", path)
-				return nil
+			switch args[1] {
+			case "pixiv":
+				n, err := fmt.Sscanf(d.Name(), "%s (%d)", &Name, &Number)
+				if n != 2 || err != nil {
+					fmt.Printf("fail to parse path '%s'\n", path)
+					return nil
+				}
+			case "name":
+				n, err := fmt.Sscanf(d.Name(), "%s", &Name)
+				Number = 0
+				if n != 1 || err != nil {
+					fmt.Printf("fail to parse path '%s'\n", path)
+					return nil
+				}
+			default:
+				return fmt.Errorf("unknown handler name: %s", args[1])
 			}
 			Folders = append(Folders, BatchUploadFolder{
 				Name:   Name,
@@ -95,11 +107,24 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 		}
 		return nil
 	})
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		return
+	}
 
 	fmt.Printf("%d folders are parsed\n", len(Folders))
 
+	tag := ""
 	for _, f := range Folders {
-		execUpload(cmd, []string{f.Path, fmt.Sprintf("%s(%d)", strings.Replace(f.Name, " ", "_", -1), f.Number)})
+		switch args[1] {
+		case "pixiv":
+			tag = fmt.Sprintf("%s(%d)", strings.Replace(f.Name, " ", "_", -1), f.Number)
+		case "name":
+			tag = f.Name
+		default:
+			continue
+		}
+		execUpload(cmd, []string{f.Path, tag})
 	}
 }
 
