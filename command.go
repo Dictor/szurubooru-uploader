@@ -77,6 +77,9 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 		if err != nil {
 			return err
 		}
+		if path == d.Name() {
+			return nil
+		}
 		var (
 			Name   string
 			Number int
@@ -124,6 +127,7 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 		default:
 			continue
 		}
+		Logger.WithFields(logrus.Fields{"path": f.Path, "tag": tag}).Infoln("upload forder")
 		execUpload(cmd, []string{f.Path, tag})
 	}
 }
