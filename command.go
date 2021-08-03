@@ -100,7 +100,7 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 					return nil
 				}
 			case "split":
-				break
+				Name = d.Name()
 			default:
 				return fmt.Errorf("unknown handler name: %s", args[1])
 			}
@@ -131,7 +131,7 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 		default:
 			continue
 		}
-		Logger.WithFields(logrus.Fields{"path": f.Path, "tag": tag}).Infoln("upload forder")
+		Logger.WithFields(logrus.Fields{"path": f.Path, "tag": tag}).Infoln("upload folder")
 		execUpload(cmd, []string{f.Path, tag})
 	}
 }
