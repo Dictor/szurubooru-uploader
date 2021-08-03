@@ -35,7 +35,7 @@ func main() {
 		}
 		cmdBatchUpload = &cobra.Command{
 			Use:              "bupload <root forder path> <handler>",
-			Long:             "batch upload multiple folder to szurubooru host\n* forder path: path to root target directory\n*handler: pixiv=%artist (%user_number), name=%artist",
+			Long:             "batch upload multiple folder to szurubooru host\n* forder path: path to root target directory\n*handler: pixiv=%artist (%user_number), name=%artist, split=%tag1 %tag2...",
 			Short:            "batch upload multiple folder to szurubooru host",
 			Args:             cobra.ExactArgs(2),
 			Run:              execBatchUpload,

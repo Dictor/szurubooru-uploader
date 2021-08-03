@@ -99,6 +99,8 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 					fmt.Printf("fail to parse path '%s'\n", path)
 					return nil
 				}
+			case "split":
+				break
 			default:
 				return fmt.Errorf("unknown handler name: %s", args[1])
 			}
@@ -124,6 +126,8 @@ func execBatchUpload(cmd *cobra.Command, args []string) {
 			tag = fmt.Sprintf("%s(%d)", strings.Replace(f.Name, " ", "_", -1), f.Number)
 		case "name":
 			tag = f.Name
+		case "split":
+			tag = strings.Replace(f.Name, " ", ",", -1)
 		default:
 			continue
 		}
