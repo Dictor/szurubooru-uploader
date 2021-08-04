@@ -77,11 +77,11 @@ func uploadFile(host, userToken, filePath string) (string, error) {
 	return ret["token"], nil
 }
 
-func createPost(host, userToken, fileToken, tag, safety string, reverseSearch *ReverseSearchResponse) error {
+func createPost(host, userToken, fileToken string, tag []string, safety string, reverseSearch *ReverseSearchResponse) error {
 	payload := map[string]interface{}{
 		"contentToken": fileToken,
 		"safety":       safety,
-		"tags":         []string{tag},
+		"tags":         tag,
 	}
 	if reverseSearch != nil && len(reverseSearch.SimilarPosts) > 0 {
 		payload["relationCount"] = len(reverseSearch.SimilarPosts)

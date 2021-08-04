@@ -57,7 +57,8 @@ func execUpload(cmd *cobra.Command, args []string) {
 			continue
 		}
 		// create post
-		if err := createPost(host, userToken, ftok, args[1], safety, rev); err != nil {
+		ptag := strings.Split(args[1], ",")
+		if err := createPost(host, userToken, ftok, ptag, safety, rev); err != nil {
 			logError(i, len(filePaths), err, path, "create post")
 			continue
 		}
