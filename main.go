@@ -18,9 +18,10 @@ var (
 )
 
 var (
-	userToken              string
-	host, userId, userPass string
-	safety                 string
+	userToken                       string
+	host, userId, userPass          string
+	safety                          string
+	userCookieName, userCookieValue string
 )
 
 func main() {
@@ -68,6 +69,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&userId, "uid", "", "user's login id")
 	rootCmd.PersistentFlags().StringVar(&userPass, "upw", "", "user's login password")
 	rootCmd.PersistentFlags().BoolVar(&isDebug, "debug", false, "print debug log")
+	rootCmd.PersistentFlags().StringVar(&userCookieName, "ckname", "", "user cookie name (when set, ./cookie.txt is read and used as value. Disabled if blank)")
 	rootCmd.Execute()
 }
 

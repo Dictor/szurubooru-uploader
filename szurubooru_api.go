@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -11,8 +13,27 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var isUserCookieValueParsed bool = false
+
 func Request() *resty.Request {
-	return client.R().SetHeader("Accept", "application/json").SetHeader("Content-Type", "application/json")
+	if userCookieName != "" {
+		if !isUserCookieValueParsed {
+			if data, err := os.ReadFile("cookie.txt"); err != nil {
+				userCookieValue = string(data)
+				isUserCookieValueParsed = true
+			} else {
+				Logger.WithError(err).Errorf("failed to read cookie.txt for user cookie. user cookie will be disabled.")
+				userCookieName = ""
+			}
+		}
+	}
+
+	req := client.R().SetHeader("Accept", "application/json").SetHeader("Content-Type", "application/json")
+	if isUserCookieValueParsed {
+		req.SetCookie(&http.Cookie{Name: userCookieName, Value: userCookieValue})
+	}
+
+	return req
 }
 
 func logResponse(resp *resty.Response, action string) {
