@@ -18,7 +18,7 @@ var isUserCookieValueParsed bool = false
 func Request() *resty.Request {
 	if userCookieName != "" {
 		if !isUserCookieValueParsed {
-			if data, err := os.ReadFile("cookie.txt"); err != nil {
+			if data, err := os.ReadFile("cookie.txt"); err == nil {
 				userCookieValue = string(data)
 				isUserCookieValueParsed = true
 			} else {
