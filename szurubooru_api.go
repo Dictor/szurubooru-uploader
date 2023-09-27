@@ -183,6 +183,31 @@ func deletePost(host, userToken string, post Post) error {
 	return nil
 }
 
-func searchTagByImplication(host, token string) ([]Tag, error) {
-
+func queryTag(host, userToken, query string, offset int) (*ListTagResponse, error) {
+	const resultPerRequest = 50
+	urlBuilder := func(host, query string, limit, offset int) string {
+		url := []string{
+			host,
+			"/api/tags/?query=",
+			query,
+			"&limit=",
+			strconv.Itoa(resultPerRequest),
+			"&offset=",
+			strconv.Itoa(offset),
+		}
+		return strings.Join(url, "")
+	}
+	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).Get(urlBuilder(host, query, resultPerRequest, offset))
+	if err != nil {
+		return nil, err
+	}
+	logResponse(resp, "queryTag")
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
+	}
+	result := ListTagResponse{}
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

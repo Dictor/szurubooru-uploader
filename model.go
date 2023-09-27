@@ -36,11 +36,20 @@ type (
 		Path   string
 	}
 
+	ListResponse struct {
+		Query  string `json:"query"`
+		Offset int    `json:"offset"`
+		Limit  int    `json:"limit"`
+		Total  int    `json:"total"`
+	}
+
 	ListPostResponse struct {
-		Query   string `json:"query"`
-		Offset  int    `json:"offset"`
-		Limit   int    `json:"limit"`
-		Total   int    `json:"total"`
+		ListResponse
 		Results []Post `json:"results"`
+	}
+
+	ListTagResponse struct {
+		ListResponse
+		Results []Tag `json:"results"`
 	}
 )
