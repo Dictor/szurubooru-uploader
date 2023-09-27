@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -190,9 +191,10 @@ func execDelete(cmd *cobra.Command, args []string) {
 }
 
 /*
-args = none
+args = [implication]
 */
 func execBatchDelete(cmd *cobra.Command, args []string) {
+	/* retrieving first page of tag  */
 	logError := func(err error) {
 		Logger.WithFields(logrus.Fields{
 			"error": err,
@@ -205,6 +207,7 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 	}
 	Logger.Infof("%d tags are found, start recursive tags retrieving\n", res.Total)
 
+	/* retrieving whole tag pages */
 	tags := []Tag{}
 	tags = append(tags, res.Results...)
 	currentPosition := len(res.Results)
@@ -222,21 +225,23 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 			currentPosition += len(res.Results)
 		}
 	}
-	Logger.Infof("tags retrieving complete. %d posts are expected, %d posts are retrieved\n", res.Total, len(tags))
-	fmt.Print("if want to continue, press enter (else, press ctrl + c)")
-	fmt.Scanln()
-	for i, p := range tags {
-		if args[1] == "true" && p.FavoriteCount > 0 {
-			Logger.Infof("(%d/%d) skipped : %d", i+1, len(posts), p.Id)
-			continue
+	Logger.Infof("tags retrieving complete. %d tags are expected, %d tags are retrieved\n", res.Total, len(tags))
+
+	/* filter tags by imlicate tag */
+	implicateCandiate := []Tag{}
+	for _, t := range tags {
+		implications := lo.Map[Tag, string](t.Implications, func(implication Tag, index int) string {
+			return implication.Names[0]
+		})
+		if lo.Contains(implications, args[0]) {
+			implicateCandiate = append(implicateCandiate, t)
 		}
-		if err := deletePost(host, userToken, p); err != nil {
-			Logger.WithFields(logrus.Fields{
-				"error": err,
-				"id":    p.Id,
-			}).Errorf("(%d/%d) error : %d\n", i+1, len(posts), p.Id)
-			continue
-		}
-		Logger.Infof("(%d/%d) deleted : %d", i+1, len(posts), p.Id)
+	}
+	Logger.Infof("%d sanitize tag candidate found", len(implicateCandiate))
+
+	/* retrieving posts from candidate */
+	for i, it := range implicateCandiate {
+		Logger.Infof("------ batch (%d/%d) %s", i, len(implicateCandiate), it.Names[0])
+		execDelete(nil, []string{it.Names[0], "true"})
 	}
 }
