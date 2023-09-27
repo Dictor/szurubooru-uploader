@@ -188,3 +188,55 @@ func execDelete(cmd *cobra.Command, args []string) {
 		Logger.Infof("(%d/%d) deleted : %d", i+1, len(posts), p.Id)
 	}
 }
+
+/*
+args = none
+*/
+func execBatchDelete(cmd *cobra.Command, args []string) {
+	logError := func(err error) {
+		Logger.WithFields(logrus.Fields{
+			"error": err,
+			"query": args[0],
+		}).Errorln("error caused during querying posts")
+	}
+	res, err := queryTag(host, userToken, "", 0)
+	if err != nil {
+		logError(err)
+	}
+	Logger.Infof("%d tags are found, start recursive tags retrieving\n", res.Total)
+
+	tags := []Tag{}
+	tags = append(tags, res.Results...)
+	currentPosition := len(res.Results)
+	if res.Total > len(res.Results) {
+		for {
+			if currentPosition >= res.Total {
+				break
+			}
+			res, err := queryTag(host, userToken, "", 0)
+			if err != nil {
+				logError(err)
+				return
+			}
+			tags = append(tags, res.Results...)
+			currentPosition += len(res.Results)
+		}
+	}
+	Logger.Infof("tags retrieving complete. %d posts are expected, %d posts are retrieved\n", res.Total, len(tags))
+	fmt.Print("if want to continue, press enter (else, press ctrl + c)")
+	fmt.Scanln()
+	for i, p := range tags {
+		if args[1] == "true" && p.FavoriteCount > 0 {
+			Logger.Infof("(%d/%d) skipped : %d", i+1, len(posts), p.Id)
+			continue
+		}
+		if err := deletePost(host, userToken, p); err != nil {
+			Logger.WithFields(logrus.Fields{
+				"error": err,
+				"id":    p.Id,
+			}).Errorf("(%d/%d) error : %d\n", i+1, len(posts), p.Id)
+			continue
+		}
+		Logger.Infof("(%d/%d) deleted : %d", i+1, len(posts), p.Id)
+	}
+}
