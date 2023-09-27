@@ -182,3 +182,7 @@ func deletePost(host, userToken string, post Post) error {
 	}
 	return nil
 }
+
+func searchTagByImplication(host, token string) ([]Tag, error) {
+
+}

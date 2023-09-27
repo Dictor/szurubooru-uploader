@@ -20,6 +20,16 @@ type (
 		FavoriteCount int           `json:"favoriteCount"`
 	}
 
+	Tag struct {
+		Version      int      `json:"version"`
+		Names        []string `json:"names"`
+		Category     string   `json:"category"`
+		Implications []Tag    `json:"implications"`
+		Suggestions  []Tag    `json:"suggestions"`
+		Usages       int      `json:"usages"`
+		Description  string   `json:"description"`
+	}
+
 	BatchUploadFolder struct {
 		Name   string
 		Number int
