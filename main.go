@@ -60,16 +60,24 @@ func main() {
 		}
 	)
 
-	if isDebug {
-		Logger.SetLevel(logrus.DebugLevel)
-	}
 	Logger.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		DisableColors: false,
 		ForceQuote:    false,
 	})
 
-	var rootCmd = &cobra.Command{Use: "app"}
+	var rootCmd = &cobra.Command{Use: "app",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
+		},
+	}
+
+	cobra.OnInitialize(func() {
+		if isDebug {
+			Logger.Infof("Debug logging is enabled!")
+			Logger.SetLevel(logrus.DebugLevel)
+		}
+	})
 
 	rootCmd.AddCommand(cmdUpload, cmdBatchUpload, cmdDelete, cmdSanitize)
 	rootCmd.PersistentFlags().StringVar(&host, "host", "http://localhost", "address of host")
