@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -148,7 +149,7 @@ func queryPost(host, userToken, query string, offset int) (*ListPostResponse, er
 		url := []string{
 			host,
 			"/api/posts/?query=",
-			query,
+			url.QueryEscape(query),
 			"&limit=",
 			strconv.Itoa(imagePerRequest),
 			"&offset=",
@@ -189,7 +190,7 @@ func queryTag(host, userToken, query string, offset int) (*ListTagResponse, erro
 		url := []string{
 			host,
 			"/api/tags/?query=",
-			query,
+			url.QueryEscape(query),
 			"&limit=",
 			strconv.Itoa(resultPerRequest),
 			"&offset=",
@@ -217,7 +218,7 @@ func updateTagImplications(host, userToken, tagName string, req ImplicationUpdat
 		url := []string{
 			host,
 			"/api/tag/",
-			name,
+			url.QueryEscape(name),
 		}
 		return strings.Join(url, "")
 	}
