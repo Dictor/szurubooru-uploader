@@ -212,7 +212,7 @@ func queryTag(host, userToken, query string, offset int) (*ListTagResponse, erro
 	return &result, nil
 }
 
-func updateTag(host, userToken string, target Tag) (*Tag, error) {
+func updateTagImplications(host, userToken, tagName string, req ImplicationUpdateRequest) (*Tag, error) {
 	urlBuilder := func(host, name string) string {
 		url := []string{
 			host,
@@ -221,7 +221,7 @@ func updateTag(host, userToken string, target Tag) (*Tag, error) {
 		}
 		return strings.Join(url, "")
 	}
-	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).SetBody(target).Put(urlBuilder(host, target.Names[0]))
+	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).SetBody(req).Put(urlBuilder(host, tagName))
 	if err != nil {
 		return nil, err
 	}

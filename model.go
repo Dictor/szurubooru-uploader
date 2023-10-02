@@ -30,6 +30,11 @@ type (
 		Description  string   `json:"description"`
 	}
 
+	ImplicationUpdateRequest struct {
+		Version      int      `json:"version"`
+		Implications []string `json:"implications"`
+	}
+
 	BatchUploadFolder struct {
 		Name   string
 		Number int

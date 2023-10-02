@@ -247,8 +247,14 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 
 		/* remove target tag and add "suspected" tag */
 		mit := it
+		hasTargetTag := false
 		mit.Implications = lo.Filter[Tag](mit.Implications, func(item Tag, index int) bool {
-			return item.Names[0] != args[0]
+			if item.Names[0] != args[0] {
+				return true
+			} else {
+				hasTargetTag = true
+				return false
+			}
 		})
 		hasSuspected := lo.ContainsBy[Tag](mit.Implications, func(item Tag) bool {
 			return item.Names[0] == "suspected"
@@ -258,8 +264,14 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 				Names: []string{"suspected"},
 			})
 		}
-		mit.Version += 1
-		if _, err = updateTag(host, userToken, mit); err != nil {
+		Logger.Infof("implication tags status: has '%s'? = %t / has 'suspected'? = %t", args[0], hasTargetTag, hasSuspected)
+		req := ImplicationUpdateRequest{
+			Version: mit.Version,
+			Implications: lo.Map[Tag, string](mit.Implications, func(item Tag, index int) string {
+				return item.Names[0]
+			}),
+		}
+		if _, err = updateTagImplications(host, userToken, mit.Names[0], req); err != nil {
 			Logger.WithError(err).Errorf("failed to update tag implications")
 		}
 	}
