@@ -76,6 +76,9 @@ func main() {
 		if isDebug {
 			Logger.Infof("Debug logging is enabled!")
 			Logger.SetLevel(logrus.DebugLevel)
+
+			client.SetLogger(Logger)
+			client.SetDebug(true)
 		}
 	})
 
