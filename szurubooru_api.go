@@ -18,7 +18,7 @@ var isUserCookieValueParsed bool = false
 func Request() *resty.Request {
 	if userCookieName != "" {
 		if !isUserCookieValueParsed {
-			if data, err := os.ReadFile("cookie.txt"); err != nil {
+			if data, err := os.ReadFile("cookie.txt"); err == nil {
 				userCookieValue = string(data)
 				isUserCookieValueParsed = true
 			} else {
@@ -206,6 +206,30 @@ func queryTag(host, userToken, query string, offset int) (*ListTagResponse, erro
 		return nil, fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
 	}
 	result := ListTagResponse{}
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func updateTag(host, userToken string, target Tag) (*Tag, error) {
+	urlBuilder := func(host, name string) string {
+		url := []string{
+			host,
+			"/api/tag/",
+			name,
+		}
+		return strings.Join(url, "")
+	}
+	resp, err := Request().SetHeader("Authorization", "Basic "+userToken).SetBody(target).Put(urlBuilder(host, target.Names[0]))
+	if err != nil {
+		return nil, err
+	}
+	logResponse(resp, "queryTag")
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("status code is %d (%s)", resp.StatusCode(), parseErrorResponse(resp))
+	}
+	result := Tag{}
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}

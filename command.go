@@ -241,7 +241,26 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 
 	/* retrieving posts from candidate */
 	for i, it := range implicateCandiate {
+		/* exec delete command */
 		Logger.Infof("------ batch (%d/%d) %s", i, len(implicateCandiate), it.Names[0])
 		execDelete(nil, []string{it.Names[0], "true"})
+
+		/* remove target tag and add "suspected" tag */
+		mit := it
+		mit.Implications = lo.Filter[Tag](mit.Implications, func(item Tag, index int) bool {
+			return item.Names[0] != args[0]
+		})
+		hasSuspected := lo.ContainsBy[Tag](mit.Implications, func(item Tag) bool {
+			return item.Names[0] == "suspected"
+		})
+		if !hasSuspected {
+			mit.Implications = append(mit.Implications, Tag{
+				Names: []string{"suspected"},
+			})
+		}
+		mit.Version += 1
+		if _, err = updateTag(host, userToken, mit); err != nil {
+			Logger.WithError(err).Errorf("failed to update tag implications")
+		}
 	}
 }
