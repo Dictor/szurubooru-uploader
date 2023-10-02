@@ -7,11 +7,11 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 var (
-	isDebug        bool
+	isDebug, skip  bool
 	client         = resty.New()
 	Logger         = logrus.New()
 	ImageExtension = []string{".jpg", ".jpeg", ".png", ".gif", ".webm", ".mp4"}
@@ -89,6 +89,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&userPass, "upw", "", "user's login password")
 	rootCmd.PersistentFlags().BoolVar(&isDebug, "debug", false, "print debug log")
 	rootCmd.PersistentFlags().StringVar(&userCookieName, "ckname", "", "user cookie name (when set, ./cookie.txt is read and used as value. Disabled if blank)")
+	rootCmd.PersistentFlags().BoolVar(&skip, "y", false, "assume every continue checking input as 'yes")
 	rootCmd.Execute()
 }
 
@@ -101,7 +102,8 @@ func credentialInput(cmd *cobra.Command, args []string) {
 	}
 	if len(userPass) < 1 {
 		fmt.Print("enter user password : ")
-		if bytepw, err := terminal.ReadPassword(int(syscall.Stdin)); err != nil {
+
+		if bytepw, err := term.ReadPassword(int(syscall.Stdin)); err != nil {
 			Logger.WithError(err).Fatalln("fail to read password input")
 		} else {
 			userPass = string(bytepw)

@@ -12,6 +12,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func scanContinue() {
+	if skip {
+		return
+	}
+	fmt.Print("if want to continue, press any key (else, press ctrl + c)")
+	fmt.Scanln()
+}
+
 /*
 args = [target directory, tags]
 */
@@ -172,8 +180,7 @@ func execDelete(cmd *cobra.Command, args []string) {
 		}
 	}
 	Logger.Infof("posts retrieving complete. %d posts are expected, %d posts are retrieved\n", res.Total, len(posts))
-	fmt.Print("if want to continue, press enter (else, press ctrl + c)")
-	fmt.Scanln()
+	scanContinue()
 	for i, p := range posts {
 		if args[1] == "true" && p.FavoriteCount > 0 {
 			Logger.Infof("(%d/%d) skipped : %d", i+1, len(posts), p.Id)
