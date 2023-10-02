@@ -216,7 +216,7 @@ func execBatchDelete(cmd *cobra.Command, args []string) {
 			if currentPosition >= res.Total {
 				break
 			}
-			res, err := queryTag(host, userToken, "", 0)
+			res, err := queryTag(host, userToken, "", currentPosition)
 			if err != nil {
 				logError(err)
 				return
